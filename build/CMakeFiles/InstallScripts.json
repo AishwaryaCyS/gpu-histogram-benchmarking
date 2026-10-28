@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/lenovo/Downloads/cuda-warp-aggregation-study/gpu-histogram-benchmarking/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

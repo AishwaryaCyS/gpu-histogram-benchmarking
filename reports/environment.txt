@@ -1,0 +1,29 @@
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2026 NVIDIA Corporation
+Built on Sun_Aug_03_13:24:32_Pacific_Standard_Time_2026
+Cuda compilation tools, release 13.4, V13.4.59
+Build cuda_13.4.r13.4/compiler.38657139_0
+Wed Oct 28 02:07:10 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 581.86                 Driver Version: 581.86         CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3050 ...  WDDM  |   00000000:01:00.0 Off |                  N/A |
+| N/A   50C    P8              3W /   75W |      72MiB /   6144MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            7380    C+G   ...Browser\Application\brave.exe      N/A      |
+|    0   N/A  N/A           13572    C+G   ...Browser\Application\brave.exe      N/A      |
++-----------------------------------------------------------------------------------------+
+NVIDIA (R) Nsight Compute Command Line Profiler
+Copyright (c) 2018-2026 NVIDIA Corporation
+Version 2026.3.0.0 (build 38525999) (public-release)
