@@ -116,19 +116,19 @@ workloads, and WSL2 overhead may affect results.
 The recorded timings describe the tested machine and configuration;
 they should not be generalized to all Windows or Linux systems.
 
-## 9. Conclusion
+## Conclusion
 
-The project implements and evaluates six histogram strategies under
-uniform and skewed input distributions and multiple block sizes.
-Automated benchmark results, cross-platform graphs, and profiler
-reports provide evidence for analyzing performance and potential
-bottlenecks.
+This project implemented and benchmarked six CUDA histogram strategies using 32 million input values and 256 histogram bins. The experiments evaluated uniform and skewed input distributions across block sizes of 128, 256, and 512 threads on the same NVIDIA GeForce RTX 3050 Laptop GPU using Windows and Ubuntu under WSL2.
 
-The measurements show that performance depends on the strategy and
-workload. In the selected direct tests, shared-memory privatization
-outperformed the warp-shared hybrid for both distributions at block
-size 256. The full repeated-run summaries provide the broader basis
-for comparing all configurations.
+The measurements show that the choice of histogram strategy has a substantial effect on performance. Shared-memory privatization (Strategy 2) achieved the lowest measured mean kernel time among the evaluated strategies for both input distributions in the collected best-configuration summaries. For skewed input, its mean kernel time was approximately 0.833 ms on Linux/WSL2 and 0.837 ms on Windows. For uniform input, the corresponding values were approximately 1.001 ms and 0.935 ms.
+
+Sort-and-reduce (Strategy 3) showed strong sensitivity to input distribution. Its measured mean kernel time was approximately 490–491 ms for skewed input, compared with approximately 12–15 ms for uniform input. This demonstrates why performance must be evaluated against the actual workload rather than inferred from an algorithm's name or structure alone.
+
+The cross-platform results also show that no single environment was consistently faster across all strategies and distributions. For example, Windows had a lower measured time for the global atomic baseline on skewed input, while Linux/WSL2 was marginally faster for shared-memory privatization on that workload. Several other comparisons were close enough that small differences should be interpreted cautiously.
+
+Nsight profiling provided additional insight into kernel execution, occupancy, scheduler behaviour, and dependency stalls. These observations help identify potential optimization directions, although profiler-induced overhead was excluded from normal benchmark timing comparisons.
+
+Overall, the experiments establish that histogram performance depends on the algorithm, input distribution, block size, and execution environment. For this implementation and test configuration, shared-memory privatization was the strongest overall candidate among the six evaluated strategies. The results are specific to the tested GPU, CUDA Toolkit versions, and execution conditions and should not be interpreted as a universal Windows-versus-Linux ranking.
 
 ## 10. Reproduction
 
