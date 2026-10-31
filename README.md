@@ -178,3 +178,79 @@ Further analysis focuses on validating the complete benchmark summary, interpret
 ## License
 
 No license has been specified for this repository yet.
+
+
+
+
+## Linux / WSL2 Support
+
+The project was also built and benchmarked in Ubuntu running under WSL2 with CUDA Toolkit 13.1 on the same NVIDIA GeForce RTX 3050 Laptop GPU.
+
+### Build
+
+```bash
+cmake -S . -B build-linux -DCMAKE_CUDA_ARCHITECTURES=86
+cmake --build build-linux -j2
+```
+
+### Run a Benchmark
+
+```bash
+./build-linux/benchmark_histogram uniform 2 256
+./build-linux/benchmark_histogram skewed 2 256
+```
+
+### Run the Benchmark Suite
+
+```bash
+python3 run_benchmarks_linux.py
+python3 compare_platforms.py
+```
+
+## Cross-Platform Results
+
+The benchmark suite evaluates six CUDA histogram strategies using uniform and skewed input distributions, with block sizes of 128, 256, and 512 threads.
+
+The Windows and Linux/WSL2 results, summary tables, and comparison plots are available in this repository.
+
+- [Linux benchmark results](benchmark_results_linux.csv)
+- [Linux benchmark summary](benchmark_summary_linux.csv)
+- [Combined platform summary](comparison_graphs/combined_platform_summary.csv)
+- [Best block sizes](comparison_graphs/best_block_sizes.csv)
+- [Detailed project report](REPORT.md)
+
+### Performance Comparison Graphs
+
+**Uniform input distribution**
+
+![Uniform Strategy 1](comparison_graphs/uniform_strategy_1.png)
+
+![Uniform Strategy 2](comparison_graphs/uniform_strategy_2.png)
+
+![Uniform Strategy 3](comparison_graphs/uniform_strategy_3.png)
+
+![Uniform Strategy 4](comparison_graphs/uniform_strategy_4.png)
+
+![Uniform Strategy 5](comparison_graphs/uniform_strategy_5.png)
+
+![Uniform Strategy 6](comparison_graphs/uniform_strategy_6.png)
+
+**Skewed input distribution**
+
+![Skewed Strategy 1](comparison_graphs/skewed_strategy_1.png)
+
+![Skewed Strategy 2](comparison_graphs/skewed_strategy_2.png)
+
+![Skewed Strategy 3](comparison_graphs/skewed_strategy_3.png)
+
+![Skewed Strategy 4](comparison_graphs/skewed_strategy_4.png)
+
+![Skewed Strategy 5](comparison_graphs/skewed_strategy_5.png)
+
+![Skewed Strategy 6](comparison_graphs/skewed_strategy_6.png)
+
+## Updated Project Status
+
+Six CUDA histogram strategies have been implemented and benchmarked across two input distributions and three CUDA block sizes. The project includes Windows and Linux/WSL2 benchmark results, cross-platform comparison graphs, and Nsight profiling reports.
+
+Measured performance depends on the input distribution, implementation strategy, block size, and execution environment. See [REPORT.md](REPORT.md) for the methodology, selected measurements, profiling observations, and experimental limitations.
