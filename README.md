@@ -8,6 +8,24 @@ The objective is to understand how different approaches to histogram constructio
 
 The benchmark uses **32 million input values and 256 histogram bins**, with two input distributions: uniform and skewed.
 
+## Benchmark Results at a Glance
+
+This project compares six CUDA histogram strategies across Windows and Linux/WSL2, using uniform and skewed input distributions and multiple CUDA block sizes.
+
+### Windows Performance Comparisons
+
+![Windows kernel time comparison](kernel_time_comparison.png)
+
+![Windows end-to-end performance comparison](end_to_end_comparison.png)
+
+### Cross-Platform Analysis
+
+The `comparison_graphs/` directory contains strategy-specific comparisons for uniform and skewed inputs, together with combined summary tables and the best measured block-size configurations.
+
+See [REPORT.md](REPORT.md) for the complete methodology, quantitative results, profiling observations, and conclusions.
+
+
+
 ## Problem Definition
 
 A histogram counts how many input elements belong to each bin.
