@@ -2,29 +2,39 @@
 
 ## Overview
 
-This project studies and compares different GPU histogram computation strategies implemented using NVIDIA CUDA.
+This project implements and compares six GPU histogram computation strategies using NVIDIA CUDA. It investigates how algorithm design, input distribution, CUDA thread-block size, and execution environment affect kernel execution time and end-to-end performance.
 
-The objective is to understand how different approaches to histogram construction affect kernel execution time and end-to-end performance under different input distributions and CUDA thread-block configurations.
+The benchmark processes **32 million input values** and constructs a histogram with **256 bins**. Experiments use two input distributions—uniform and skewed—and compare results from Windows and Ubuntu running under WSL2 on the same NVIDIA GeForce RTX 3050 Laptop GPU with 6 GB of reported memory.
 
-The benchmark uses **32 million input values and 256 histogram bins**, with two input distributions: uniform and skewed.
+The project includes CUDA implementations, automated benchmark scripts, CSV datasets, performance visualizations, Nsight profiling reports, and a cross-platform analysis report.
 
 ## Benchmark Results at a Glance
 
-This project compares six CUDA histogram strategies across Windows and Linux/WSL2, using uniform and skewed input distributions and multiple CUDA block sizes.
+The experiments evaluate six strategies, two input distributions, and three CUDA block sizes: 128, 256, and 512 threads.
+
+This produces **36 configurations per platform**, with five repetitions per configuration in the Linux benchmark suite.
 
 ### Windows Performance Comparisons
 
+The following plots present the Windows benchmark results.
+
+**Kernel execution time**
+
 ![Windows kernel time comparison](kernel_time_comparison.png)
+
+**End-to-end execution time**
 
 ![Windows end-to-end performance comparison](end_to_end_comparison.png)
 
+Kernel execution time and end-to-end execution time are different measurements. End-to-end timing may include additional processing and setup overhead, depending on the benchmark implementation.
+
 ### Cross-Platform Analysis
 
-The `comparison_graphs/` directory contains strategy-specific comparisons for uniform and skewed inputs, together with combined summary tables and the best measured block-size configurations.
+The `comparison_graphs/` directory contains strategy-specific comparisons between Windows and Linux/WSL2 for both input distributions.
 
-See [REPORT.md](REPORT.md) for the complete methodology, quantitative results, profiling observations, and conclusions.
+The combined summary tables and plots help investigate performance differences across the tested configurations.
 
-
+See [REPORT.md](REPORT.md) for the experimental methodology, selected measurements, profiling observations, limitations, and conclusions.
 
 ## Problem Definition
 
@@ -37,9 +47,11 @@ H[b] = \sum_{i=0}^{N-1} \mathbf{1}(x_i=b)
 \]
 
 where:
+
 - \(N\) is the number of input elements.
 - \(b\) is a histogram bin.
 - \(H[b]\) is the number of elements assigned to bin \(b\).
+- \(\mathbf{1}(x_i=b)\) equals 1 when \(x_i=b\), and 0 otherwise.
 
 The sum of all histogram bins should equal the number of input elements:
 
@@ -47,83 +59,158 @@ The sum of all histogram bins should equal the number of input elements:
 \sum_{b=0}^{255} H[b] = 32{,}000{,}000
 \]
 
-This property is used as part of the correctness checks.
+This property is used as part of the benchmark's correctness checks.
 
 ## Implemented Strategies
 
-The project compares six histogram computation approaches:
+The project compares six histogram computation approaches.
 
 1. **Global Atomic Baseline** — Threads update histogram bins in global memory using atomic operations.
 2. **Shared-Memory Privatization** — Blocks build local histograms in shared memory and subsequently merge their counts.
-3. **Sort-and-Reduce** — Input values are sorted and repeated values are counted using a reduction-based approach.
-4. **Warp Register Aggregation** — Warp-level aggregation combines updates to the same bin before issuing histogram updates.
+3. **Sort-and-Reduce** — Sorts input values and counts repeated values using a reduction-based approach.
+4. **Warp Register Aggregation** — Combines updates to the same bin at the warp level before issuing histogram updates.
 5. **Warp-Shared Hybrid** — Combines warp-level aggregation with shared-memory histogram construction.
-6. **Per-Warp Shared-Memory Histogram** — Uses separate shared-memory histograms for individual warps before merging the results.
+6. **Per-Warp Shared-Memory Histogram** — Uses separate shared-memory histograms for individual warps before merging their results.
 
-The implementations are located in `src/` with their declarations in `include/`.
+The CUDA implementations are located in `src/`, with their declarations in `include/`.
 
 ## Experimental Configuration
 
 | Parameter | Configuration |
 |---|---|
 | Input size | 32,000,000 values |
-| Number of bins | 256 |
+| Histogram bins | 256 |
 | Input distributions | Uniform and skewed |
-| CUDA block sizes | 128, 256 and 512 threads |
-| Strategies | 6 |
-| Total configurations | 36 |
-
-The configurations consist of six strategies evaluated across two distributions and three block sizes.
+| CUDA block sizes | 128, 256, 512 threads |
+| Histogram strategies | 6 |
+| Configurations per platform | 36 |
+| Linux benchmark repetitions | 5 per configuration |
+| Linux benchmark runs | 180 successful runs |
 
 ### Input Distributions
 
 - **Uniform:** Values are distributed approximately evenly across the histogram bins.
-- **Skewed:** Values are concentrated around a smaller portion of the bin range, increasing the potential for contention on frequently updated bins.
+- **Skewed:** Values are concentrated in a smaller portion of the range, increasing the potential for contention on frequently updated bins.
 
-The distributions help evaluate how the different implementations behave under different update patterns.
+These distributions allow the implementations to be evaluated under different update patterns.
 
 ## Benchmarking and Analysis
 
-The project includes scripts and output files for performance measurement and analysis.
+The repository contains scripts and output files for benchmark execution, statistical summaries, and cross-platform comparisons.
 
-- `run_benchmarks.py` — Automates benchmark execution.
-- `benchmark_results.csv` — Stores individual benchmark results.
-- `benchmark_summary.csv` — Stores summarized benchmark results.
-- `results/` — Contains generated result visualizations.
-- `reports/` — Contains profiling reports and supporting experimental information.
+### Windows benchmark files
 
-Two important performance measures are considered:
+- `run_benchmarks.py` — Automates the Windows benchmark suite.
+- `benchmark_results.csv` — Individual Windows benchmark results.
+- `benchmark_summary.csv` — Summarized Windows benchmark results.
+- `results/` — Windows result visualizations.
+
+### Linux/WSL2 benchmark files
+
+- `run_benchmarks_linux.py` — Automates the Linux/WSL2 benchmark suite.
+- `benchmark_results_linux.csv` — Individual Linux/WSL2 benchmark results.
+- `benchmark_summary_linux.csv` — Summarized Linux/WSL2 benchmark results.
+- `benchmark_failures_linux.txt` — Records benchmark failures; the completed suite reported no failed runs.
+
+### Cross-platform analysis files
+
+- `compare_platforms.py` — Generates cross-platform comparison outputs.
+- `comparison_graphs/combined_platform_summary.csv` — Combined platform summary data.
+- `comparison_graphs/best_block_sizes.csv` — Best measured block-size configurations for each platform, distribution, and strategy.
+- `comparison_graphs/` — Generated comparison plots for all six strategies under both input distributions.
+
+### Performance metrics
 
 **Kernel execution time:** Measures the execution time of the histogram kernel.
 
-**End-to-end time:** Measures the broader execution pipeline, which may include operations beyond the kernel itself. The exact components depend on the benchmark implementation.
+**End-to-end execution time:** Measures a broader execution pipeline, potentially including allocation, data transfer, preprocessing, or other operations, depending on the benchmark implementation.
 
-Kernel timings and end-to-end timings should be interpreted separately because a strategy with a fast kernel may still have additional preprocessing or execution overhead.
+These metrics should be interpreted separately. A strategy with a fast kernel may still incur additional preprocessing or execution overhead.
 
-## NVIDIA Nsight Compute Profiling
+For fair comparisons, the relevant timing metric and block-size configuration should be considered explicitly.
 
-Nsight Compute was used to collect GPU kernel profiling reports.
+## Cross-Platform Performance Graphs
 
-The profiling configuration includes both input distributions and all six strategies, using a block size of 256 threads.
+The following plots compare Windows and Linux/WSL2 measurements for each strategy.
 
-The reports can be used to investigate:
-- Kernel launch configuration.
-- Compute and memory throughput indicators.
-- Register usage.
-- Occupancy-related information.
-- Memory workload behavior.
-- Warp execution and stall characteristics.
-- Potential optimization opportunities.
+### Uniform Input Distribution
 
-Profiling overhead can affect measured execution time. Therefore, normal benchmark timings should be used for performance comparisons, while Nsight Compute reports should be used to investigate kernel behavior.
+**Strategy 1 — Global Atomic Baseline**
+
+![Uniform Strategy 1](comparison_graphs/uniform_strategy_1.png)
+
+**Strategy 2 — Shared-Memory Privatization**
+
+![Uniform Strategy 2](comparison_graphs/uniform_strategy_2.png)
+
+**Strategy 3 — Sort-and-Reduce**
+
+![Uniform Strategy 3](comparison_graphs/uniform_strategy_3.png)
+
+**Strategy 4 — Warp Register Aggregation**
+
+![Uniform Strategy 4](comparison_graphs/uniform_strategy_4.png)
+
+**Strategy 5 — Warp-Shared Hybrid**
+
+![Uniform Strategy 5](comparison_graphs/uniform_strategy_5.png)
+
+**Strategy 6 — Per-Warp Shared-Memory Histogram**
+
+![Uniform Strategy 6](comparison_graphs/uniform_strategy_6.png)
+
+### Skewed Input Distribution
+
+**Strategy 1 — Global Atomic Baseline**
+
+![Skewed Strategy 1](comparison_graphs/skewed_strategy_1.png)
+
+**Strategy 2 — Shared-Memory Privatization**
+
+![Skewed Strategy 2](comparison_graphs/skewed_strategy_2.png)
+
+**Strategy 3 — Sort-and-Reduce**
+
+![Skewed Strategy 3](comparison_graphs/skewed_strategy_3.png)
+
+**Strategy 4 — Warp Register Aggregation**
+
+![Skewed Strategy 4](comparison_graphs/skewed_strategy_4.png)
+
+**Strategy 5 — Warp-Shared Hybrid**
+
+![Skewed Strategy 5](comparison_graphs/skewed_strategy_5.png)
+
+**Strategy 6 — Per-Warp Shared-Memory Histogram**
+
+![Skewed Strategy 6](comparison_graphs/skewed_strategy_6.png)
+
+The plots should be interpreted alongside the CSV summaries, which contain the measurements used for the comparisons.
+
+## NVIDIA Nsight Profiling
+
+NVIDIA Nsight Systems and Nsight Compute were used to investigate representative benchmark executions.
+
+**Nsight Systems** helps inspect CUDA API activity, kernel execution, and memory-transfer activity.
+
+**Nsight Compute** provides kernel-level information such as register usage, occupancy, throughput indicators, scheduler behaviour, and warp stall characteristics.
+
+The collected profiling artifacts are stored in `reports/`. The available reports cover selected configurations rather than every possible benchmark configuration.
+
+Profiler execution times are not substituted for normal benchmark timings because profiling and replay can introduce additional overhead.
+
+The profiling observations provide evidence for investigating potential bottlenecks, but individual stall metrics do not necessarily establish a single definitive cause of poor performance.
 
 ## Building the Project
 
-Requirements:
+### Requirements
+
 - NVIDIA GPU supporting the CUDA features used by the implementation.
-- NVIDIA CUDA Toolkit.
-- A compatible C++ compiler and build environment.
+- NVIDIA CUDA Toolkit compatible with the project.
+- Compatible C++ compiler and build environment.
 - CMake.
+
+### Windows
 
 From a suitable Windows development terminal, configure and build the project:
 
@@ -132,38 +219,64 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-The commands assume that the installed compiler, CUDA Toolkit and CMake configuration are compatible with the project.
-
-## Running the Benchmark
-
-Run the benchmark executable with the input distribution, strategy ID and block size:
+Run an example benchmark:
 
 ```bat
 build\benchmark_histogram.exe skewed 1 256
 ```
 
-For example, the command requests the skewed distribution, strategy 1 and a block size of 256 threads.
-
-Run the benchmark automation script to execute the configured experiments:
+Run the Windows benchmark automation script:
 
 ```bat
 python run_benchmarks.py
 ```
 
-Refer to the script and `CMakeLists.txt` for the exact supported arguments and build configuration.
+### Linux / WSL2
+
+The project was also built and benchmarked in Ubuntu running under WSL2, using CUDA Toolkit 13.1.
+
+Configure and build the Linux executable:
+
+```bash
+cmake -S . -B build-linux -DCMAKE_CUDA_ARCHITECTURES=86
+cmake --build build-linux -j2
+```
+
+Run example benchmarks:
+
+```bash
+./build-linux/benchmark_histogram uniform 2 256
+./build-linux/benchmark_histogram skewed 2 256
+```
+
+Run the Linux benchmark suite:
+
+```bash
+python3 run_benchmarks_linux.py
+```
+
+Regenerate the cross-platform comparison outputs:
+
+```bash
+python3 compare_platforms.py
+```
+
+The commands assume a compatible CUDA compiler, GPU architecture configuration, and CMake environment. Refer to `CMakeLists.txt` and the benchmark scripts for implementation-specific details.
 
 ## Results and Interpretation
 
-The benchmark CSV files and plots are provided for examining the performance of the implemented strategies.
+The results support several important comparisons.
 
-The analysis should consider:
-- Differences between uniform and skewed input distributions.
-- The effect of CUDA block size on kernel execution.
-- The trade-off between kernel time and end-to-end time.
-- The effects of atomic contention and memory access patterns.
-- The additional overhead associated with sorting and reduction.
+- **Input distribution:** Uniform and skewed inputs can produce substantially different execution times for the same strategy.
+- **Block size:** The best measured block size can differ across strategies, distributions, and platforms.
+- **Atomic contention:** Histogram updates may contend when many threads target the same bins.
+- **Memory hierarchy:** Global-memory atomics, shared-memory privatization, and per-warp histograms have different synchronization and memory-access costs.
+- **Preprocessing overhead:** Sort-and-reduce may incur substantial sorting and reduction costs, depending on the input distribution and implementation.
+- **Execution environment:** Windows and Linux/WSL2 results can differ because of software configuration and execution conditions, even on the same physical GPU.
 
-No single strategy should be assumed to perform best under every configuration without examining the measured results.
+No single result should be interpreted without considering the input distribution, block size, and timing metric.
+
+For the quantitative findings and final conclusions from the collected measurements, see [REPORT.md](REPORT.md).
 
 ## Project Structure
 
@@ -177,21 +290,34 @@ gpu-histogram-benchmarking/
 ├── reports/
 │   └── Profiling reports and environment information
 ├── results/
-│   └── Generated graphs
+│   └── Windows result visualizations
+├── comparison_graphs/
+│   ├── combined_platform_summary.csv
+│   ├── best_block_sizes.csv
+│   └── Uniform and skewed comparison plots
 ├── CMakeLists.txt
+├── README.md
+├── REPORT.md
 ├── run_benchmarks.py
+├── run_benchmarks_linux.py
+├── compare_platforms.py
 ├── benchmark_results.csv
 ├── benchmark_summary.csv
-└── README.md
+├── benchmark_results_linux.csv
+└── benchmark_summary_linux.csv
 ```
 
-The exact contents of the `reports/` and `results/` directories depend on the collected experiments.
+Generated build directories and additional profiling artifacts may be present in the repository beyond this simplified structure.
 
 ## Project Status
 
-The CUDA implementations have been built and benchmarked, and Nsight Compute profiling reports have been collected for the configured strategies and input distributions.
+The project includes six CUDA histogram strategies, Windows and Linux/WSL2 benchmark results, cross-platform comparison graphs, CSV summaries, and selected Nsight profiling artifacts.
 
-Further analysis focuses on validating the complete benchmark summary, interpreting profiling metrics, checking the generated visualizations and documenting the experimental findings.
+The completed experiments provide a basis for comparing strategy performance across input distributions, block sizes, and execution environments. The accompanying report documents the methodology, measured results, profiling observations, and limitations.
+
+## Detailed Report
+
+See [REPORT.md](REPORT.md) for the full cross-platform performance and profiling report, including selected measurements, interpretation, and conclusions.
 
 ## License
 
@@ -200,75 +326,5 @@ No license has been specified for this repository yet.
 
 
 
-## Linux / WSL2 Support
 
-The project was also built and benchmarked in Ubuntu running under WSL2 with CUDA Toolkit 13.1 on the same NVIDIA GeForce RTX 3050 Laptop GPU.
-
-### Build
-
-```bash
-cmake -S . -B build-linux -DCMAKE_CUDA_ARCHITECTURES=86
-cmake --build build-linux -j2
-```
-
-### Run a Benchmark
-
-```bash
-./build-linux/benchmark_histogram uniform 2 256
-./build-linux/benchmark_histogram skewed 2 256
-```
-
-### Run the Benchmark Suite
-
-```bash
-python3 run_benchmarks_linux.py
-python3 compare_platforms.py
-```
-
-## Cross-Platform Results
-
-The benchmark suite evaluates six CUDA histogram strategies using uniform and skewed input distributions, with block sizes of 128, 256, and 512 threads.
-
-The Windows and Linux/WSL2 results, summary tables, and comparison plots are available in this repository.
-
-- [Linux benchmark results](benchmark_results_linux.csv)
-- [Linux benchmark summary](benchmark_summary_linux.csv)
-- [Combined platform summary](comparison_graphs/combined_platform_summary.csv)
-- [Best block sizes](comparison_graphs/best_block_sizes.csv)
-- [Detailed project report](REPORT.md)
-
-### Performance Comparison Graphs
-
-**Uniform input distribution**
-
-![Uniform Strategy 1](comparison_graphs/uniform_strategy_1.png)
-
-![Uniform Strategy 2](comparison_graphs/uniform_strategy_2.png)
-
-![Uniform Strategy 3](comparison_graphs/uniform_strategy_3.png)
-
-![Uniform Strategy 4](comparison_graphs/uniform_strategy_4.png)
-
-![Uniform Strategy 5](comparison_graphs/uniform_strategy_5.png)
-
-![Uniform Strategy 6](comparison_graphs/uniform_strategy_6.png)
-
-**Skewed input distribution**
-
-![Skewed Strategy 1](comparison_graphs/skewed_strategy_1.png)
-
-![Skewed Strategy 2](comparison_graphs/skewed_strategy_2.png)
-
-![Skewed Strategy 3](comparison_graphs/skewed_strategy_3.png)
-
-![Skewed Strategy 4](comparison_graphs/skewed_strategy_4.png)
-
-![Skewed Strategy 5](comparison_graphs/skewed_strategy_5.png)
-
-![Skewed Strategy 6](comparison_graphs/skewed_strategy_6.png)
-
-## Updated Project Status
-
-Six CUDA histogram strategies have been implemented and benchmarked across two input distributions and three CUDA block sizes. The project includes Windows and Linux/WSL2 benchmark results, cross-platform comparison graphs, and Nsight profiling reports.
-
-Measured performance depends on the input distribution, implementation strategy, block size, and execution environment. See [REPORT.md](REPORT.md) for the methodology, selected measurements, profiling observations, and experimental limitations.
+ 
